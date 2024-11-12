@@ -7,8 +7,8 @@ namespace LauncherApp
 {
     class LauncherSettings
     {
-        public string path { get; set; }
-        public string arguments { get; set; }
+        public string path { get; set; } = "C:\\Windows\\system32\\calc.exe";
+        public string arguments { get; set; } = "";
     }
 
     class Program
@@ -19,7 +19,7 @@ namespace LauncherApp
         {
             try {
                 ensureSettingsExist();
-                LauncherSettings settings = LoadConfiguration();
+                LauncherSettings settings = LoadSettings();
                 if (string.IsNullOrEmpty(settings.path)) {
                     Console.Error.WriteLine("Error: 'ApplicationPath' must be specified in the configuration file.");
                     return;
@@ -47,10 +47,23 @@ namespace LauncherApp
             }
         }
 
-        private static LauncherSettings LoadConfiguration()
+        private static LauncherSettings LoadSettings()
         {
+            if (!File.Exists(settingsFileName)) {
+                throw new FileNotFoundException($"Settings file '{settingsFileName}' not found.");
+            }
+
             string jsonData = File.ReadAllText(settingsFileName);
-            return JsonSerializer.Deserialize<LauncherSettings>(jsonData);
+            if (string.IsNullOrEmpty(jsonData)) {
+                throw new InvalidOperationException("Configuration file is empty.");
+            }
+
+            var settings = JsonSerializer.Deserialize<LauncherSettings>(jsonData);
+            if (settings == null) {
+                throw new InvalidOperationException("Failed to deserialize the configuration file.");
+            }
+
+            return settings;
         }
 
         private static void LaunchApplication(LauncherSettings settings)
