@@ -1,7 +1,5 @@
 ﻿using LaunchInfoDumper.Models;
 using LaunchInfoDumper.Services;
-using System.Diagnostics;
-using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace LaunchInfoDumper
@@ -26,7 +24,7 @@ namespace LaunchInfoDumper
             DisplayEnvironmentVariables(envVars);
             DisplaySiblingProcesses(siblings);
 
-            Console.WriteLine("\nPress 'Q' to exit, 'W' to write dump to file...");
+            Console.WriteLine($"{Environment.NewLine}Press 'Q' to exit, 'W' to write dump to file...");
             while (true)
             {
                 var key = Console.ReadKey(true).Key;
@@ -77,7 +75,7 @@ namespace LaunchInfoDumper
 
             if (process.LoadedModules.Any())
             {
-                builder.AppendLine("\n- Loaded Modules:");
+                builder.AppendLine($"{Environment.NewLine}- Loaded Modules:");
                 foreach (var module in process.LoadedModules)
                 {
                     builder.AppendLine($"-- {module.Name}: \"{module.FileName}\"");
@@ -86,7 +84,7 @@ namespace LaunchInfoDumper
 
             if (process.Threads.Any())
             {
-                builder.AppendLine("\n- Thread Information:");
+                builder.AppendLine($"{Environment.NewLine}- Thread Information:");
                 foreach (var thread in process.Threads)
                 {
                     builder.AppendLine($"-- Thread ID: {thread.Id}");
@@ -103,7 +101,7 @@ namespace LaunchInfoDumper
 
         static void DisplayEnvironmentVariables(Dictionary<string, string> envVars)
         {
-            Console.WriteLine("\n=== Environment Variables ===");
+            Console.WriteLine($"{Environment.NewLine}=== Environment Variables ===");
             foreach (var entry in envVars)
             {
                 Console.WriteLine($"- {entry.Key} = \"{entry.Value}\"");
@@ -114,7 +112,7 @@ namespace LaunchInfoDumper
     
         static void DisplaySiblingProcesses(List<ProcessInfo> siblings)
         {
-            Console.WriteLine("\n=== Sibling Processes ===");
+            Console.WriteLine($"{Environment.NewLine}=== Sibling Processes ===");
             foreach (var sibling in siblings)
             {
                 Console.WriteLine($"- {sibling.Name} (ID: {sibling.Id})");
@@ -130,7 +128,7 @@ namespace LaunchInfoDumper
             List<ProcessInfo> siblings)
         {
             using var writer = new StreamWriter("process_dump.txt", false);
-            await writer.WriteLineAsync($"Date: {DateTime.Now}\n");
+            await writer.WriteLineAsync($"Date: {DateTime.Now}{Environment.NewLine}");
 
             // Write current process info
             await writer.WriteLineAsync(CreateProcessInfoDump("CURRENT PROCESS", currentProcess));
@@ -140,17 +138,20 @@ namespace LaunchInfoDumper
                 await writer.WriteLineAsync(CreateProcessInfoDump("PARENT PROCESS", parentProcess));
 
             // Write environment variables
-            await writer.WriteLineAsync("\n=== ENVIRONMENT VARIABLES ===");
+            await writer.WriteLineAsync($"{Environment.NewLine}=== ENVIRONMENT VARIABLES ===");
             foreach (var entry in envVars)
             {
                 await writer.WriteLineAsync($"({entry.Key}) = ({entry.Value})");
             }
 
             // Write sibling processes
-            await writer.WriteLineAsync("\n=== SIBLING PROCESSES ===");
-            foreach (var sibling in siblings)
+            if (siblings.Count > 0)
             {
-                await writer.WriteLineAsync($"{sibling.Name} (ID: {sibling.Id})");
+                await writer.WriteLineAsync($"{Environment.NewLine}=== SIBLING PROCESSES ===");
+                foreach (var sibling in siblings)
+                {
+                    await writer.WriteLineAsync($"{sibling.Name} (ID: {sibling.Id})");
+                }
             }
         }
     }

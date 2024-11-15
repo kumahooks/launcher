@@ -41,48 +41,47 @@ namespace LaunchInfoDumper.Services
 
             try
             {
-                var parentProcess = Process.GetProcessById(parentProcessId);
-                var info = ProcessInfo.FromProcess(parentProcess);
-                info.CommandLine = GetProcessCommandLine(parentProcessId);
-                info.IsElevated = IsProcessElevated();
-
-                // Add modules
-                try
+                using (var parentProcess = Process.GetProcessById(parentProcessId))
                 {
-                    foreach (ProcessModule module in parentProcess.Modules)
+                    var info = ProcessInfo.FromProcess(parentProcess);
+                    info.CommandLine = GetProcessCommandLine(parentProcessId);
+                    info.IsElevated = IsProcessElevated();
+
+                    try
                     {
-                        info.LoadedModules.Add(new ModuleInfo
+                        foreach (ProcessModule module in parentProcess.Modules)
                         {
-                            Name = module.ModuleName,
-                            FileName = module.FileName
+                            info.LoadedModules.Add(new ModuleInfo
+                            {
+                                Name = module.ModuleName,
+                                FileName = module.FileName
+                            });
+                        }
+                    }
+                    catch (Win32Exception)
+                    {
+                        // Module access denied
+                    }
+
+                    foreach (ProcessThread thread in parentProcess.Threads)
+                    {
+                        info.Threads.Add(new ThreadInfo
+                        {
+                            Id = thread.Id,
+                            Priority = thread.CurrentPriority,
+                            State = thread.ThreadState,
+                            CpuTime = thread.TotalProcessorTime
                         });
                     }
-                }
-                catch (Win32Exception)
-                {
-                    // Module access denied
-                }
 
-                // Add threads
-                foreach (ProcessThread thread in parentProcess.Threads)
-                {
-                    info.Threads.Add(new ThreadInfo
-                    {
-                        Id = thread.Id,
-                        Priority = thread.CurrentPriority,
-                        State = thread.ThreadState,
-                        CpuTime = thread.TotalProcessorTime
-                    });
+                    return info;
                 }
-
-                return info;
             }
             catch (Exception)
             {
                 return null;
             }
         }
-
         public List<ProcessInfo> GetSiblingProcesses()
         {
             var currentProcess = Process.GetCurrentProcess();
